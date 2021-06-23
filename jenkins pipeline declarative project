@@ -1,0 +1,62 @@
+pipeline{
+    agent any
+    tools{
+    maven "maven3.6.3"
+    }
+    options{
+        timestamps()
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '', 
+        artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5'))
+    }
+    triggers{
+        pollSCM('* * * * *')
+      // pipelineTriggers([cron('* * * * *')])
+      //pipelineTriggers([githubPush()])
+    }
+    
+     stages{
+    
+    
+    stage('git input'){
+        
+        steps{
+            git branch: 'development', credentialsId: '3c791bcf-33da-42a0-b32f-e1a8d7f020d1',
+            url: 'https://github.com/Shaikbabjan1796/maven-web-application.git'
+        }
+    }
+    
+    stage('build'){
+        steps{
+            sh "mvn clean package"
+        }
+    }
+    
+     stage('excute the sonarqube report'){
+        steps{
+            sh "mvn clean sonar:sonar"
+        }
+    }
+    
+    stage('upload to artiact nexus repository'){
+        steps{
+            sh "mvn clean deploy"
+        }
+    }
+}
+post{
+    success{
+        emailext body: '''Build is over! -success.
+
+Regards,
+Shaik Babjan
+Devops engineer.''', subject: 'build is over', to: 'babimr786@gmail.com'
+    }
+    failure{
+        emailext body: '''Build is over! -failed
+
+Regards,
+Shaik Babjan
+Devops engineer.''', subject: 'build is over', to: 'babimr786@gmail.com'
+    }
+}
+}
